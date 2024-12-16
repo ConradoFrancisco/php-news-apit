@@ -12,23 +12,32 @@ class NewsModel {
 
     // Crear una noticia
     public function createNews($title, $content, $author, $date) {
-        $query = "INSERT INTO news (title, content, author, date) VALUES (?, ?, ?, ?)";
+        $query = "INSERT INTO news (title, content, author, date) VALUES (:title, :content, :author, :date)";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("ssss", $title, $content, $author, $date);
+    
+        // Asignar valores usando bindValue
+        $stmt->bindValue(':title', $title, PDO::PARAM_STR);
+        $stmt->bindValue(':content', $content, PDO::PARAM_STR);
+        $stmt->bindValue(':author', $author, PDO::PARAM_STR);
+        $stmt->bindValue(':date', $date, PDO::PARAM_STR);
+    
         $stmt->execute();
-        return $this->db->insert_id;
+    
+        return $this->db->lastInsertId(); // Devuelve el ID del último registro insertado
     }
 
     // Agregar imágenes a una noticia
     public function createImages($newsId, $images) {
-        $query = "INSERT INTO images (newsId, url) VALUES (?, ?)";
+        $query = "INSERT INTO images (newsId, url) VALUES (:newsId, :url)";
         $stmt = $this->db->prepare($query);
-
+    
         foreach ($images as $image) {
-            $stmt->bind_param("is", $newsId, $image);
+            // Asignar valores usando bindValue para cada iteración
+            $stmt->bindValue(':newsId', $newsId, PDO::PARAM_INT);
+            $stmt->bindValue(':url', $image, PDO::PARAM_STR);
             $stmt->execute();
         }
-
+    
         return true;
     }
 
@@ -119,10 +128,10 @@ class NewsModel {
             SELECT n.*, GROUP_CONCAT(i.url) AS images
             FROM news n
             LEFT JOIN images i ON n.id = i.newsId
-            WHERE n.id = ?
+            WHERE n.id = :id
             GROUP BY n.id";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(":id", $id);
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -145,17 +154,18 @@ class NewsModel {
 
     // Eliminar una noticia
     public function deleteNews($id) {
-        $query = "DELETE FROM news WHERE id = ?";
+        $query = "DELETE FROM news WHERE id = :id";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("i", $id);
+        $stmt->bindValue(":id", $id,PDO::PARAM_INT);
         return $stmt->execute();
     }
 
     // Cambiar estado de una noticia
     public function setState($id, $status) {
-        $query = "UPDATE news SET status = ? WHERE id = ?";
+        $query = "UPDATE news SET status = :stat WHERE id = ?";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("ii", $status, $id);
+        $stmt->bindValue(":stat", $status, PDO::PARAM_INT);
+        $stmt->bindValue(":id", $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 

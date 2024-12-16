@@ -48,16 +48,17 @@ class NewsController {
 
     // Obtener todas las noticias
     public function getAll($queryParams) {
+        
         try {
-            $offset = $queryParams['offset'] ?? 0;
-            $limit = $queryParams['limit'] ?? 10;
+            $offset = isset($queryParams['offset']) ? intval($queryParams['offset']) : 0;
+            $limit = isset($queryParams['limit']) ? intval($queryParams['limit']) : 10;
             $title = $queryParams['title'] ?? null;
             $status = isset($queryParams['status']) ? (int) $queryParams['status'] : null;
             $startDate = $queryParams['startDate'] ?? null;
             $endDate = $queryParams['endDate'] ?? null;
             $result = $this->newsModel->getAllNews($offset, $limit, $title, $status, $startDate, $endDate);
             header("Content-Type: application/json; charset=UTF-8");
-            echo json_encode(["noticias" => $result['news'], "total" => $result['total']]);
+            echo json_encode(["noticias" => $result['news'], "total" => $result['total'],"queryParams" => $queryParams]);
             return json_encode(["noticias" => $result['news'], "total" => $result['total']]);
         } catch (Exception $e) {
             http_response_code(500);
@@ -143,22 +144,34 @@ class NewsController {
     }
 
     // Cambiar estado de una noticia
-    public function setState($id, $request) {
+    public function setState($id, $data) {
         try {
-            $status = $request['status'] ?? null;
-            if (!is_numeric($status)) {
+            $status = $data['status'] ?? null;
+            if ($status === null) {
                 http_response_code(400);
-                echo json_encode(["message" => "Estado inválido"]);
+                echo json_encode(["message" => "El estado es obligatorio",$status]);
                 return;
             }
-
-            $this->newsModel->setState($id, $status);
-            echo json_encode([
-                "message" => $status === 1 ? "Noticia publicada con éxito" : "Noticia dada de baja"
-            ]);
+    
+            // Validar ID
+            if (!is_numeric($id)) {
+                http_response_code(400);
+                echo json_encode(["message" => "ID inválido"]);
+                return;
+            }
+    
+            // Cambiar el estado en la base de datos
+            $this->newsModel->setState($status, $id);
+    
+            if ($status == 1) {
+                echo json_encode(["message" => "Noticia publicada con éxito"]);
+            } else {
+                echo json_encode(["message" => "Noticia dada de baja"]);
+            }
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(["message" => "Error al cambiar estado", "error" => $e->getMessage()]);
+            echo json_encode(["message" => "Error al cambiar el estado", "error" => $e->getMessage()]);
         }
     }
+    
 }
