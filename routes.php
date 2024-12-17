@@ -1,38 +1,58 @@
 <?php
-require_once 'Database.php';
 require_once 'AuthController.php';
 
-$db = (new Database())->connect();
-$authController = new AuthController($db);
+$authController = new AuthController();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $endpoint = $_GET['endpoint'] ?? '';
+header('Content-Type: application/json; charset=utf-8');
 
-    switch ($endpoint) {
-        case 'login':
-            $data = json_decode(file_get_contents("php://input"), true);
-            echo json_encode($authController->login($data));
-            break;
-
-        case 'register':
-            $data = json_decode(file_get_contents("php://input"), true);
-            echo json_encode($authController->register($data));
-            break;
-
-        case 'forgot-password':
-            $data = json_decode(file_get_contents("php://input"), true);
-            echo json_encode($authController->forgotPassword($data));
-            break;
-
-        case 'reset-password':
-            $token = $_GET['token'] ?? '';
-            $data = json_decode(file_get_contents("php://input"), true);
-            echo json_encode($authController->resetPassword($token, $data['password']));
-            break;
-
-        default:
-            http_response_code(404);
-            echo json_encode(['status' => 404, 'message' => 'Endpoint no encontrado']);
-    }
+// Login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/login$@', $_SERVER['REQUEST_URI'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->login($data);
+    exit;
 }
+
+// Crear usuario temporal
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && preg_match('@/api/auth/create-temp-user$@', $_SERVER['REQUEST_URI'])) {
+    $authController->createTemporaryUser();
+    exit;
+}
+
+// 3. Forgot Password
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/forgot-password$@', $_SERVER['REQUEST_URI'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->forgotPassword($data);
+    exit;
+}
+
+// 4. Reset Password
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/reset-password/(\w+)$@', $_SERVER['REQUEST_URI'], $matches)) {
+    header('Content-Type: application/json; charset=utf-8');
+    $token = $matches[1];
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->resetPassword($token, $data['password']);
+    exit;
+}
+
+// 5. Validar Token (opcional, para verificar si un token es válido)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && preg_match('@/api/auth/validate-token$@', $_SERVER['REQUEST_URI'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $authHeader = getallheaders()['Authorization'] ?? '';
+    $authController->validateToken($authHeader);
+    exit;
+}
+
+// 6. Cambiar Contraseña
+if ($_SERVER['REQUEST_METHOD'] === 'PUT' && preg_match('@/api/auth/change-password$@', $_SERVER['REQUEST_URI'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authHeader = getallheaders()['Authorization'] ?? '';
+    $authController->changePassword($authHeader, $data);
+    exit;
+}
+// Default
+http_response_code(404);
+echo json_encode(['status' => 404, 'message' => 'Endpoint no encontrado']);
+exit;
 ?>

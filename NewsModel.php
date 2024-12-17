@@ -130,25 +130,33 @@ class NewsModel {
             LEFT JOIN images i ON n.id = i.newsId
             WHERE n.id = :id
             GROUP BY n.id";
+    
         $stmt = $this->db->prepare($query);
-        $stmt->bindValue(":id", $id);
+        $stmt->bindValue(":id", $id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows === 0) {
-            return null;
+    
+        // Obtener una sola fila con fetch()
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$row) {
+            return null; // Si no hay resultados, devuelve null
         }
-
-        $row = $result->fetch_assoc();
+    
+        // Procesar las imágenes (separarlas si existen)
         $row['images'] = $row['images'] ? explode(",", $row['images']) : [];
+    
         return $row;
     }
-
     // Actualizar una noticia
     public function updateNews($id, $title, $content, $author, $date) {
-        $query = "UPDATE news SET title = ?, content = ?, author = ?, date = ? WHERE id = ?";
+        $query = "UPDATE news SET title = :title, content = :content, author = :author, date = :date WHERE id = :id";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("ssssi", $title, $content, $author, $date, $id);
+
+        $stmt->bindValue(":id", $id, PDO::PARAM_INT);
+        $stmt->bindValue(":title", $title, PDO::PARAM_STR);
+        $stmt->bindValue(":content", $content, PDO::PARAM_STR);
+        $stmt->bindValue(":author", $author, PDO::PARAM_STR);
+        $stmt->bindValue(":date", $date, PDO::PARAM_STR);
         return $stmt->execute();
     }
 
@@ -160,9 +168,31 @@ class NewsModel {
         return $stmt->execute();
     }
 
+    public function createTemporaryUser() {
+        
+            // Definir datos del usuario temporal
+            $name = "admin";
+            $email = "conradofrancisco96@gmail.com";
+            $password = "admin";
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $role = "admin";
+    
+            // Insertar usuario en la base de datos
+            $query = "INSERT INTO users (name, email, password, role) VALUES (:name, :email, :password, :role)";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(":name", $name, PDO::PARAM_STR);
+            $stmt->bindValue(":email", $email, PDO::PARAM_STR);
+            $stmt->bindValue(":password", $hashedPassword, PDO::PARAM_STR);
+            $stmt->bindValue(":role", $role, PDO::PARAM_STR);
+           return $stmt->execute();
+    
+        
+    }
+
+
     // Cambiar estado de una noticia
     public function setState($id, $status) {
-        $query = "UPDATE news SET status = :stat WHERE id = ?";
+        $query = "UPDATE news SET status = :stat WHERE id = :id";
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(":stat", $status, PDO::PARAM_INT);
         $stmt->bindValue(":id", $id, PDO::PARAM_INT);
