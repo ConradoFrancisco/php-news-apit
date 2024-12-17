@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/update/(\d+)$@', 
     $newsController->update($id, $_POST, $_FILES);
     exit;
 }
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/news/(\d+)/?@', $_SERVER['REQUEST_URI'], $matches)) {
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/delete/(\d+)/?@', $_SERVER['REQUEST_URI'], $matches)) {
     // Eliminar noticia
     $id = $matches[1];
     $newsController->delete($id);

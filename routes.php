@@ -36,10 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/reset-passwo
 }
 
 // 5. Validar Token (opcional, para verificar si un token es válido)
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && preg_match('@/api/auth/validate-token$@', $_SERVER['REQUEST_URI'])) {
-    header('Content-Type: application/json; charset=utf-8');
-    $authHeader = getallheaders()['Authorization'] ?? '';
-    $authController->validateToken($authHeader);
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && preg_match('@/api/auth/validate-reset-token$@', $_SERVER['REQUEST_URI'])) {
+    $token = $_GET['token'] ?? '';
+    $authController->validateResetToken($token);
     exit;
 }
 
@@ -51,6 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT' && preg_match('@/api/auth/change-passwo
     $authController->changePassword($authHeader, $data);
     exit;
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/reset-password$@', $_SERVER['REQUEST_URI'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->resetPassword($data);
+    exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/validate-token$@', $_SERVER['REQUEST_URI'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->validateToken($data);
+    exit;
+}
+
 // Default
 http_response_code(404);
 echo json_encode(['status' => 404, 'message' => 'Endpoint no encontrado']);

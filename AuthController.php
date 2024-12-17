@@ -4,6 +4,7 @@ require_once 'vendor/autoload.php';
 use Firebase\JWT\JWT;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use Firebase\JWT\Key;
 
 class AuthController {
     private $userModel;
@@ -50,12 +51,11 @@ class AuthController {
             exit;
         }
 
-        // Crear un token con expiración de 1 hora
-        $resetToken = JWT::encode(
-            ['userId' => $user['id'], 'exp' => time() + 3600],
-            $this->jwtSecret,
-            'HS256'
-        );
+        $token = bin2hex(random_bytes(32)); // Token seguro
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+    
+        // Guardar token en la base de datos
+       $this->userModel->insertToken($email,$token,$expiresAt);
 
         // Enviar correo con PHPMailer
         try {
@@ -73,7 +73,7 @@ class AuthController {
             $mail->addAddress($email);
 
             // Configurar el mensaje
-            $resetUrl = "http://localhost:5173/gibson-2/reset-password/$resetToken";
+            $resetUrl = "https://www.dssolucionesdigitales.com.ar/gibson-2/reset-password/?token=$token";
             $mail->isHTML(true);
             $mail->Subject = 'Restablecer contraseña';
             $mail->Body = "
@@ -91,6 +91,67 @@ class AuthController {
             echo json_encode(['status' => 500, 'message' => 'Error al enviar el correo', 'error' => $mail->ErrorInfo]);
         }
     }
+
+    public function validateToken($data) {
+        $token = $data['token'] ?? null;
+    
+        if (!$token) {
+            http_response_code(400);
+            echo json_encode(["message" => "Token no proporcionado"]);
+            exit;
+        }
+    
+        // Buscar el token en la base de datos
+        $tokenData = $this->userModel->findToken($token);
+    
+        if (!$tokenData || $tokenData['used'] == 1) {
+            http_response_code(400);
+            echo json_encode(["message" => "Token inválido o ya fue utilizado"]);
+            exit;
+        }
+    
+        // Verificar si ha expirado
+        if (strtotime($tokenData['expires_at']) < time()) {
+            http_response_code(401);
+            echo json_encode(["message" => "Token expirado"]);
+            exit;
+        }
+    
+        echo json_encode(["message" => "Token válido"]);
+    }
+    public function resetPassword($data) {
+        $token = $data['token'] ?? null;
+        $newPassword = $data['password'] ?? null;
+    
+        if (!$token || !$newPassword) {
+            http_response_code(400);
+            echo json_encode(["message" => "Token y nueva contraseña son obligatorios"]);
+            exit;
+        }
+    
+        // Obtener el token de la base de datos
+        $tokenData = $this->userModel->findToken($token);
+    
+        if (!$tokenData || $tokenData['used'] == 1) {
+            http_response_code(400);
+            echo json_encode(["message" => "Token inválido o ya fue utilizado"]);
+            exit;
+        }
+    
+        if (strtotime($tokenData['expires_at']) < time()) {
+            http_response_code(400);
+            echo json_encode(["message" => "El token ha expirado"]);
+            exit;
+        }
+    
+        // Actualizar la contraseña
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+        $this->userModel->updatePasswordByEmail($tokenData['email'], $hashedPassword);
+    
+        $this->userModel->markTokenAsUsed($token);
+        echo json_encode(["message" => "Contraseña restablecida con éxito"]);
+    }
+
 
 
     public function createTemporaryUser() {
