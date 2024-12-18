@@ -201,9 +201,9 @@ class NewsModel {
 
     // Eliminar una imagen por su URL
     public function deleteImageByUrl($url) {
-        $query = "DELETE FROM images WHERE url = ?";
+        $query = "DELETE FROM images WHERE url = :url";
         $stmt = $this->db->prepare($query);
-        $stmt->bind_param("s", $url);
+        $stmt->bindValue(":url", $url);
         return $stmt->execute();
     }
 }

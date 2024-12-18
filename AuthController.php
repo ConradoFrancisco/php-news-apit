@@ -73,7 +73,7 @@ class AuthController {
             $mail->addAddress($email);
 
             // Configurar el mensaje
-            $resetUrl = "https://www.dssolucionesdigitales.com.ar/gibson-2/reset-password/?token=$token";
+            $resetUrl = "http://localhost:5173/gibson-2/reset-password/?token=$token";
             $mail->isHTML(true);
             $mail->Subject = 'Restablecer contraseña';
             $mail->Body = "

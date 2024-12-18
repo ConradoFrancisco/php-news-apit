@@ -151,7 +151,7 @@ class NewsController {
     }
 
     // Actualizar una noticia
-    public function update($id, $data,$imgs) {
+    public function update($id, $data,$files) {
         try {
             $title = $data['title'];
             $content = $data['content'];
@@ -159,7 +159,7 @@ class NewsController {
             $date = $data['date'];
     
             $existingImages = $request['existingImages'] ?? [];
-            $files = $imgs['images'] ?? null;
+            
 
             if (!$title || !$content) {
                 http_response_code(400);
@@ -170,29 +170,21 @@ class NewsController {
             $this->newsModel->updateNews($id, $title, $content, $author, $date);
 
             // Procesar nuevas imágenes
-            if ($files && $files['tmp_name'][0]) {
-                $imagePaths = [];
-                foreach ($files['tmp_name'] as $index => $tmpName) {
-                    $fileName = uniqid() . "-" . basename($files['name'][$index]);
-                    $uploadPath = "uploads/" . $fileName;
-                    move_uploaded_file($tmpName, $uploadPath);
-                    $imagePaths[] = $uploadPath;
+            
+            if ($files) {
+                // Procesar la imagen subida
+                $image = $files['image'];
+                $targetDir = __DIR__ . "/uploads/";
+                $fileName = uniqid() . "-" . basename($image['name']);
+                $targetPath = $targetDir . $fileName;
+                if (!move_uploaded_file($image['tmp_name'], $targetPath)) {
+                    throw new Exception("Error al mover la imagen");
                 }
-                $this->newsModel->createImages($id, $imagePaths);
+                $this->newsModel->createImages($id, ["/uploads/" . $fileName]);
             }
+            
 
-            // Eliminar imágenes que no están en `existingImages`
-            $currentImages = $this->newsModel->getImagesByNewsId($id);
-            $imagesToDelete = array_diff($currentImages, $existingImages);
-
-            foreach ($imagesToDelete as $imageUrl) {
-                $this->newsModel->deleteImageByUrl($imageUrl);
-                if (file_exists($imageUrl)) {
-                    unlink($imageUrl);
-                }
-            }
-
-            echo json_encode(["message" => "Noticia actualizada con éxito"]);
+            echo json_encode(["message" => "Noticia actualizada con éxito","imgs" =>$files]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["message" => "Error al actualizar noticia", "error" => $e->getMessage()]);
@@ -275,6 +267,18 @@ class NewsController {
             echo json_encode(["message" => "Error al procesar la imagen", "error" => $e->getMessage()]);
         }
     }
+
+    public function deleteImage($data){
+        try{
+            $this->newsModel->deleteImageByUrl($data['url']);
+            echo json_encode(['message'=>"Imagen elimnada con exito","url"=>$data['url']]);
+        }catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(["message" => "Error al eliminar la imagen", "error" => $e->getMessage()]);
+        }
+    }
+
+
     public function createTemporaryUser() {
         try {
             

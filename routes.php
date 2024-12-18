@@ -62,8 +62,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/validate-tok
     exit;
 }
 
-// Default
-http_response_code(404);
-echo json_encode(['status' => 404, 'message' => 'Endpoint no encontrado']);
-exit;
 ?>

@@ -6,9 +6,9 @@ class Database {
 
     private function __construct() {
         $host = 'localhost'; // Cambia por tu host
-        $dbname = 'c2012330_desa'; // Cambia por tu base de datos
-        $username = 'c2012330_desa'; // Cambia por tu usuario
-        $password = 'zuVEzono31'; // Cambia por tu contraseña
+        $dbname = 'authDB'; // Cambia por tu base de datos
+        $username = 'root'; // Cambia por tu usuario
+        $password = ''; // Cambia por tu contraseña
 
         try {
             $this->connection = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

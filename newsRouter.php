@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/update/(\d+)$@', 
     $newsController->update($id, $_POST, $_FILES);
     exit;
 }
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/delete/(\d+)/?@', $_SERVER['REQUEST_URI'], $matches)) {
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/news/delete/(\d+)/?@', $_SERVER['REQUEST_URI'], $matches)) {
     // Eliminar noticia
     $id = $matches[1];
     $newsController->delete($id);
@@ -61,8 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/delete/(\d+)/?@
 
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && preg_match('@/api/news/images/?@', $_SERVER['REQUEST_URI'])) {
     // Eliminar imagen de noticia
-    parse_str(file_get_contents("php://input"), $postVars);
-    $newsController->deleteImage($postVars);
+    $data = json_decode(file_get_contents("php://input"), true);
+    $newsController->deleteImage($data);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/upload@', $_SERVER['REQUEST_URI'])) {
