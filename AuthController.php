@@ -73,7 +73,7 @@ class AuthController {
             $mail->addAddress($email);
 
             // Configurar el mensaje
-            $resetUrl = "http://localhost:5173/gibson-2/reset-password/?token=$token";
+            $resetUrl = "https://dssolucionesdigitales.com.ar/gibson-2/reset-password/?token=$token";
             $mail->isHTML(true);
             $mail->Subject = 'Restablecer contraseña';
             $mail->Body = "
@@ -164,5 +164,22 @@ class AuthController {
         }
         exit;
     }
+
+    public function createUser($data){
+        $name = $data['userName'];
+        $email = $data['email'];
+        $password = $data['password'];
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+        try{
+            $this->userModel->createUser($name,$email,$hashedPassword,'user');
+            http_response_code(201);
+            echo json_encode(['status' => 201,"message" =>"usuario creado correctamente","data" => $data]);
+        }catch(Exception $e){
+            http_response_code(500);
+            echo json_encode(['status' => 500, 'message' => 'Error al crear el usuario']);
+        }
+    }
+
 }
 ?>

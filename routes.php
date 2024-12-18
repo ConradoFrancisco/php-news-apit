@@ -62,4 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/validate-tok
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && preg_match('@/api/auth/create-user$@', $_SERVER['REQUEST_URI'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    $authController->createUser($data);
+    exit;
+}
+
 ?>
