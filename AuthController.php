@@ -172,6 +172,17 @@ class AuthController {
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
         try{
+            
+            if($this->userModel->findByEmail($email)){
+                http_response_code(409);
+                echo json_encode(['message' => "El email ya ha sido registrado"]); 
+                exit;
+            }
+            if($result = $this->userModel->findByName($name)){
+                http_response_code(409);
+                echo json_encode(['message' => "El nombre de usuario ya ha sido registrado"]); 
+                exit;
+            }
             $this->userModel->createUser($name,$email,$hashedPassword,'user');
             http_response_code(201);
             echo json_encode(['status' => 201,"message" =>"usuario creado correctamente","data" => $data]);
